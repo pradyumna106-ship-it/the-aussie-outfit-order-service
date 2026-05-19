@@ -6,17 +6,23 @@ import {
   createOrder,
   getOrdersByUser,
   getOrderById,
-  updateOrderStatus
+  updateOrderStatus,
+  getOrders
 } from "../controller/order.js";
 
 const router = express.Router();
 
-router.post("/", createOrder);
+
 
 router.get("/user/:userId", getOrdersByUser);
 
 router.get("/:orderId", getOrderById);
 
 router.put("/:orderId/status", updateOrderStatus);
+
+router.route("/")
+  .get(getOrders)
+  .post(createOrder);
+
 
 export default router;
