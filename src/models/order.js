@@ -26,6 +26,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    customerName: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
     orderNumber: {
       type: String,
@@ -99,6 +104,11 @@ const orderSchema = new mongoose.Schema(
     placedAt: {
       type: Date,
       default: Date.now
+    },
+    packedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
     }
   },
   {

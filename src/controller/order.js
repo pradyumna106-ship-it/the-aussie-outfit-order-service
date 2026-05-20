@@ -9,6 +9,7 @@ export const createOrder = async (req, res) => {
 
     const {
       userId,
+      customerName,
       items,
       shippingAddressId,
       subtotalAmount,
@@ -16,7 +17,8 @@ export const createOrder = async (req, res) => {
       shippingAmount,
       discountAmount,
       totalAmount,
-      notes
+      notes,
+      packedBy
     } = req.body;
 
     if (
@@ -53,7 +55,9 @@ export const createOrder = async (req, res) => {
       shippingAmount,
       discountAmount,
       totalAmount,
-      notes
+      notes,
+      customerName,
+      packedBy
     });
 
     const orderItems = items.map(item => ({
