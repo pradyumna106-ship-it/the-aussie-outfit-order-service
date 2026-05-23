@@ -12,13 +12,10 @@ const ORDER_STATUS = [
   "returned"
 ];
 
-const PAYMENT_STATUS = [
-  "pending",
-  "paid",
-  "failed",
-  "refunded"
-];
-
+const PAYMENT_METHODS = [
+  "razorpay",
+  "cash"
+]
 const orderSchema = new mongoose.Schema(
   {
     userId: {
@@ -46,13 +43,12 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
       index: true
     },
-
-    paymentStatus: {
+    paymentMethod: {
       type: String,
-      enum: PAYMENT_STATUS,
-      default: "pending"
+      enum: PAYMENT_METHODS,
+      required: true,
+      default:"razorpay"
     },
-
     subtotalAmount: {
       type: Number,
       required: true,

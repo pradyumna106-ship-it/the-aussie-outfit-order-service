@@ -5,87 +5,97 @@ import OrderItem from "../models/orderItem.js";
 import ShippingAddress from "../models/shippingAddress.js";
 
 export const createOrder = async (req, res) => {
-  try {
 
-    const {
-      userId,
-      customerName,
-      items,
-      shippingAddressId,
-      subtotalAmount,
-      taxAmount,
-      shippingAmount,
-      discountAmount,
-      totalAmount,
-      notes,
-      packedBy
-    } = req.body;
+    try {
 
-    if (
-      !userId ||
-      !items ||
-      !items.length ||
-      !shippingAddressId
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Required order fields are missing"
+      const {
+        userId,
+        customerName,
+        items,
+        shippingAddressId,
+        paymentMethod,
+        subtotalAmount,
+        taxAmount,
+        shippingAmount,
+        discountAmount,
+        totalAmount,
+        notes
+      } = req.body;
+
+
+      if (
+        !userId ||
+        !items ||
+        !items.length ||
+        !shippingAddressId
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Required order fields are missing"
+        });
+      }
+
+      let shippingAddress = await ShippingAddress.findOne(
+        {
+          addressId: shippingAddressId
+        }
+      );
+
+      if (!shippingAddress) {
+        shippingAddress = await ShippingAddress.create({
+          userId,
+          addressId: shippingAddressId,
+          orderId: null,
+        })
+      }
+      const orderNumber = `ORD-${Date.now()}`;
+
+      const order = await Order.create({
+        userId,
+        orderNumber,
+        shippingAddressId: shippingAddress._id,
+        subtotalAmount,
+        taxAmount,
+        shippingAmount,
+        discountAmount,
+        totalAmount,
+        notes,
+        customerName
       });
+
+      const orderItems = items.map(item => ({
+        orderId: order._id,
+        productId: item.productId,
+        productName: item.productName,
+        sku: item.sku,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice
+      }));
+
+      await OrderItem.insertMany(orderItems);
+      await ShippingAddress.findByIdAndUpdate(
+        shippingAddress._id,
+        {
+          orderId: order._id
+        }
+      );
+      return res.status(201).json({
+        success: true,
+        message: "Order created successfully",
+        data: order
+      });
+
+    } catch (error) {
+
+      return res.status(500).json({
+        success: false,
+        message: error.message
+      });
+
     }
 
-    const shippingAddress = await ShippingAddress.findById(
-      shippingAddressId
-    );
-
-    if (!shippingAddress) {
-      return res.status(404).json({
-        success: false,
-        message: "Shipping address not found"
-      });
-    }
-
-    const orderNumber = `ORD-${Date.now()}`;
-
-    const order = await Order.create({
-      userId,
-      orderNumber,
-      shippingAddressId,
-      subtotalAmount,
-      taxAmount,
-      shippingAmount,
-      discountAmount,
-      totalAmount,
-      notes,
-      customerName,
-      packedBy
-    });
-
-    const orderItems = items.map(item => ({
-      orderId: order._id,
-      productId: item.productId,
-      productName: item.productName,
-      sku: item.sku,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      totalPrice: item.totalPrice
-    }));
-
-    await OrderItem.insertMany(orderItems);
-
-    return res.status(201).json({
-      success: true,
-      message: "Order created successfully",
-      data: order
-    });
-
-  } catch (error) {
-
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+  };
 
 export const getOrdersByUser = async (req, res) => {
   try {
@@ -151,13 +161,23 @@ export const updateOrderStatus = async (req, res) => {
 
     const { orderId } = req.params;
 
-    const { status } = req.body;
+    const { status , packedBy } = req.body;
+    const existingOrder = await Order.findById(orderId);
+    
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
 
+    const updateData = {
+      status,
+      packedBy
+    }
     const order = await Order.findByIdAndUpdate(
       orderId,
-      {
-        status
-      },
+      updateData,
       {
         new: true
       }
