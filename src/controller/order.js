@@ -102,14 +102,20 @@ export const getOrdersByUser = async (req, res) => {
 
     const { userId } = req.params;
 
-    const orders = await Order.find({
+    const order = await Order.findOne({
       userId
     }).sort({ createdAt: -1 });
 
+   const orderItems = await OrderItem.find({
+      orderId: order._id
+    });
+
     return res.status(200).json({
       success: true,
-      count: orders.length,
-      data: orders
+      data: {
+        order,
+        items: orderItems
+      }
     });
 
   } catch (error) {
@@ -124,9 +130,9 @@ export const getOrdersByUser = async (req, res) => {
 export const getOrderById = async (req, res) => {
   try {
 
-    const { orderId } = req.params;
+    
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({
