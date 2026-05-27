@@ -98,6 +98,7 @@ export const createOrder = async (req, res) => {
   };
 
 export const getOrdersByUser = async (req, res) => {
+
   try {
 
     const { userId } = req.params;
@@ -106,15 +107,23 @@ export const getOrdersByUser = async (req, res) => {
       userId
     }).sort({ createdAt: -1 });
 
-   const orderItems = await OrderItem.find({
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    const orderItems = await OrderItem.find({
       orderId: order._id
     });
 
     return res.status(200).json({
       success: true,
       data: {
-        order,
-        items: orderItems
+        order: order,
+        items: orderItems,
+        message: "did you recive a values"
       }
     });
 
@@ -124,7 +133,9 @@ export const getOrdersByUser = async (req, res) => {
       success: false,
       message: error.message
     });
+
   }
+
 };
 
 export const getOrderById = async (req, res) => {
@@ -212,18 +223,53 @@ export const updateOrderStatus = async (req, res) => {
 };
 
 export const getOrders = async (req, res) => {
+
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+
+    const orders = await Order.find()
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const orderIds = orders.map(order => order._id);
+
+    const orderItems = await OrderItem.find({
+      orderId: { $in: orderIds }
+    }).lean();
+
+    const itemsMap = {};
+
+    for (const item of orderItems) {
+
+      const key = item.orderId.toString();
+
+      if (!itemsMap[key]) {
+        itemsMap[key] = [];
+      }
+
+      itemsMap[key].push(item);
+
+    }
+
+    const ordersWithItems = orders.map(order => ({
+      ...order,
+      items: itemsMap[order._id.toString()] || []
+    }));
 
     return res.status(200).json({
       success: true,
       count: orders.length,
-      data: orders
+      data: ordersWithItems
     });
+
   } catch (error) {
+
+    console.log(error);
+
     return res.status(500).json({
       success: false,
       message: error.message
     });
+
   }
-}
+
+};
