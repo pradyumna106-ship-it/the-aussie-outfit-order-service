@@ -103,7 +103,7 @@ export const getOrdersByUser = async (req, res) => {
 
     const { userId } = req.params;
 
-    const order = await Order.findOne({
+    const order = await Order.find({
       userId
     }).sort({ createdAt: -1 });
 
